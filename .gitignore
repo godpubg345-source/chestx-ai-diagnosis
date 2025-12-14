@@ -52,6 +52,7 @@ data/*.csv
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb
+!chestx-ai-kaggle.ipynb
 
 # OS
 .DS_Store
