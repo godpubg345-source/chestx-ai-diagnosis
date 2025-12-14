@@ -77,7 +77,7 @@ class ChestXrayDataset(Dataset):
         
         try:
             image = Image.open(image_path).convert('RGB')
-        except:
+        except (FileNotFoundError, OSError):
             image = Image.new('RGB', (224, 224), color='black')
         
         if self.transform:

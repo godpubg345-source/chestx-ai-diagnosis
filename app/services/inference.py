@@ -6,7 +6,6 @@ import time
 from typing import Dict, Optional, Any
 
 import torch
-import numpy as np
 from PIL import Image
 from torchvision import transforms
 
@@ -24,7 +23,7 @@ class InferenceService:
     
     def __init__(self, model_path: Optional[str] = None, device: str = "cuda"):
         if device == "cuda" and not torch.cuda.is_available():
-            print("⚠️ CUDA not available, using CPU")
+            print("CUDA not available, using CPU")
             device = "cpu"
         
         self.device = device
@@ -33,10 +32,11 @@ class InferenceService:
         self.gradcam = GradCAM(self.model)
         
         if self.device == "cuda":
-            print(f"🎮 GPU: {torch.cuda.get_device_name(0)}")
+            gpu_name = torch.cuda.get_device_name(0)
+            print(f"GPU: {gpu_name}")
     
     def _load_model(self) -> ChestXrayDenseNet:
-        print(f"📦 Loading model on {self.device}...")
+        print(f"Loading model on {self.device}...")
         model = create_model(num_classes=14, pretrained=True, 
                            checkpoint_path=self.model_path, device=self.device)
         model.eval()
@@ -78,8 +78,8 @@ class InferenceService:
                 target_class=target_class, alpha=0.4
             )
             heatmap_image = Image.fromarray(heatmap)
-        except Exception as e:
-            print(f"⚠️ Grad-CAM failed: {e}")
+        except ValueError as e:
+            print(f"Grad-CAM failed: {e}")
             heatmap_image = image.convert("RGB").resize((224, 224))
         
         buffer = io.BytesIO()

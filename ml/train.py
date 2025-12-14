@@ -1,8 +1,6 @@
 """Training Pipeline for ChestX-AI"""
 
-import os
 import argparse
-import time
 from pathlib import Path
 
 import torch
@@ -49,8 +47,10 @@ class Trainer:
         self.model = self.model.to(self.device)
         
         self.criterion = nn.BCELoss()
-        self.optimizer = optim.AdamW(self.model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
-        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.5, patience=3)
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=config.learning_rate,
+                                      weight_decay=config.weight_decay)
+        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min',
+                                                               factor=0.5, patience=3)
         self.scaler = GradScaler() if config.use_amp else None
         
         self.best_val_loss = float('inf')
@@ -58,9 +58,10 @@ class Trainer:
         self.checkpoint_dir = Path(config.checkpoint_dir)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         
-        print(f"🚀 Training on: {self.device}")
+        print(f"Training on: {self.device}")
         if self.device.type == 'cuda':
-            print(f"   GPU: {torch.cuda.get_device_name(config.gpu)}")
+            gpu_name = torch.cuda.get_device_name(config.gpu)
+            print(f"GPU: {gpu_name}")
     
     def train_epoch(self, epoch):
         self.model.train()
@@ -68,7 +69,7 @@ class Trainer:
         
         pbar = tqdm(self.train_loader, desc=f"Epoch {epoch+1}/{self.config.epochs}")
         
-        for batch_idx, (images, labels) in enumerate(pbar):
+        for images, labels in pbar:
             images, labels = images.to(self.device), labels.to(self.device)
             self.optimizer.zero_grad()
             
@@ -110,20 +111,20 @@ class Trainer:
         
         try:
             auc = roc_auc_score(all_labels, all_preds, average='macro')
-        except:
+        except ValueError:
             auc = 0.0
         
         return total_loss / len(self.val_loader), auc
     
-    def save_checkpoint(self, epoch, val_loss, is_best=False):
+    def save_checkpoint(self, val_loss, is_best=False):
         torch.save(self.model.state_dict(), self.checkpoint_dir / "latest.pth")
         if is_best:
             torch.save(self.model.state_dict(), self.checkpoint_dir / "best.pth")
-            print(f"💾 Saved best model (val_loss: {val_loss:.4f})")
+            print(f"Saved best model (val_loss: {val_loss:.4f})")
     
     def train(self):
         print("\n" + "="*60)
-        print("🏋️ Starting Training")
+        print("Starting Training")
         print("="*60)
         
         for epoch in range(self.config.epochs):
@@ -131,7 +132,8 @@ class Trainer:
             val_loss, val_auc = self.validate()
             self.scheduler.step(val_loss)
             
-            print(f"\n📊 Epoch {epoch+1}: Train Loss={train_loss:.4f}, Val Loss={val_loss:.4f}, AUC={val_auc:.4f}")
+            print(f"\nEpoch {epoch+1}: Train Loss={train_loss:.4f}, "
+                  f"Val Loss={val_loss:.4f}, AUC={val_auc:.4f}")
             
             is_best = val_loss < self.best_val_loss
             if is_best:
@@ -140,13 +142,13 @@ class Trainer:
             else:
                 self.patience_counter += 1
             
-            self.save_checkpoint(epoch, val_loss, is_best)
+            self.save_checkpoint(val_loss, is_best)
             
             if self.patience_counter >= self.config.patience:
-                print(f"\n⏹️ Early stopping at epoch {epoch+1}")
+                print(f"\nEarly stopping at epoch {epoch+1}")
                 break
         
-        print("\n✅ Training Complete!")
+        print("\nTraining Complete!")
 
 
 def main():
@@ -166,8 +168,10 @@ def main():
     train_dataset = ChestXrayDataset(config.data_dir, 'train', get_transforms(True))
     val_dataset = ChestXrayDataset(config.data_dir, 'val', get_transforms(False))
     
-    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, num_workers=4, pin_memory=True)
-    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False, num_workers=4, pin_memory=True)
+    train_loader = DataLoader(train_dataset, batch_size=config.batch_size,
+                              shuffle=True, num_workers=4, pin_memory=True)
+    val_loader = DataLoader(val_dataset, batch_size=config.batch_size,
+                            shuffle=False, num_workers=4, pin_memory=True)
     
     model = ChestXrayDenseNet(pretrained=True)
     trainer = Trainer(model, train_loader, val_loader, config)

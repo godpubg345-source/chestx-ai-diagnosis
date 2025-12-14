@@ -22,7 +22,7 @@ inference_service: InferenceService = None
 async def lifespan(app: FastAPI):
     global inference_service
     
-    print("🚀 Starting ChestX-AI Medical Diagnosis System...")
+    print("Starting ChestX-AI Medical Diagnosis System...")
     print("=" * 50)
     
     model_path = os.getenv("MODEL_PATH", "models/densenet121_chestxray.pth")
@@ -30,13 +30,13 @@ async def lifespan(app: FastAPI):
     
     inference_service = InferenceService(model_path=model_path, device=device)
     
-    print(f"✅ Model loaded on {inference_service.device}")
-    print(f"✅ Ready to analyze chest X-rays!")
+    print(f"Model loaded on {inference_service.device}")
+    print("Ready to analyze chest X-rays!")
     print("=" * 50)
     
     yield
     
-    print("👋 Shutting down ChestX-AI...")
+    print("Shutting down ChestX-AI...")
 
 
 app = FastAPI(
