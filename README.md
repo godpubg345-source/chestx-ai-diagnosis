@@ -7,7 +7,7 @@
 [![GPU](https://img.shields.io/badge/GPU-CUDA%2012.x-76B900.svg)](https://developer.nvidia.com/cuda-toolkit)
 
 <p align="center">
-  <img src="assets/demo.gif" alt="ChestX-AI Demo" width="800">
+  <img src="assets/demo.png" alt="ChestX-AI Demo" width="800">
 </p>
 
 > 🏥 **Production-grade AI system** for detecting 14 thoracic diseases from chest X-rays using deep learning with explainable AI (Grad-CAM).
