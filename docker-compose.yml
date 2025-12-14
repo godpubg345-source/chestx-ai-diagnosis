@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  chestx-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chestx-ai
+    ports:
+      - "8000:8000"
+    environment:
+      - DEVICE=cuda
+      - MODEL_PATH=models/densenet121_chestxray.pth
+      - DEBUG=false
+    volumes:
+      - ./models:/app/models:ro
+      - ./data:/app/data:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Development service without GPU
+  chestx-ai-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chestx-ai-dev
+    ports:
+      - "8001:8000"
+    environment:
+      - DEVICE=cpu
+      - MODEL_PATH=models/densenet121_chestxray.pth
+      - DEBUG=true
+    volumes:
+      - ./app:/app/app
+      - ./ml:/app/ml
+      - ./models:/app/models
+    command: python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    profiles:
+      - dev
