@@ -30,6 +30,7 @@ class DiagnosisResponse(BaseModel):
 
 
 class HealthResponse(BaseModel):
+    model_config = {"protected_namespaces": ()}
     status: str
     service: str
     model_loaded: bool

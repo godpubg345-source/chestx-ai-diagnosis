@@ -31,9 +31,14 @@ class ChestXrayDenseNet(nn.Module):
         self.features = self.densenet.features
         self.classifier = self.densenet.classifier
         
+        # Disable inplace ReLU for compatibility with Grad-CAM backward hooks
+        for m in self.densenet.modules():
+            if isinstance(m, nn.ReLU):
+                m.inplace = False
+        
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         features = self.features(x)
-        out = nn.functional.relu(features, inplace=True)
+        out = nn.functional.relu(features, inplace=False)
         out = nn.functional.adaptive_avg_pool2d(out, (1, 1))
         out = torch.flatten(out, 1)
         out = self.classifier(out)
@@ -50,12 +55,12 @@ class ChestXrayDenseNet(nn.Module):
             try:
                 state_dict = torch.load(checkpoint_path, map_location=device)
                 model.load_state_dict(state_dict)
-                print(f"✅ Loaded weights from {checkpoint_path}")
+                print(f"[OK] Loaded weights from {checkpoint_path}")
             except FileNotFoundError:
-                print(f"⚠️ Checkpoint not found: {checkpoint_path}")
+                print(f"[WARN] Checkpoint not found: {checkpoint_path}")
                 print("   Using ImageNet pretrained weights only")
             except Exception as e:
-                print(f"⚠️ Error loading checkpoint: {e}")
+                print(f"[WARN] Error loading checkpoint: {e}")
                 print("   Using ImageNet pretrained weights only")
         
         return model.to(device)
